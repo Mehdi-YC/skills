@@ -2,6 +2,9 @@
 
 A collection of [agent skills](https://code.claude.com/docs/en/skills) for Claude Code. Each skill is a folder containing a `SKILL.md` with frontmatter (name, description) and instructions that Claude loads on demand when the task matches.
 
+[![skills.sh](https://skills.sh/b/michaelshimeles/skills)](https://skills.sh/michaelshimeles/skills)
+
+
 ## Available skills
 
 ### [before-and-after](before-and-after/SKILL.md)
@@ -82,14 +85,10 @@ Use it when:
 
 ## Installation
 
-Clone the repo and copy (or symlink) a skill folder into your skills directory:
+Use `npx skills` to install skills to most coding agents:
 
 ```bash
-# Available in all projects
-cp -r code-structure ~/.claude/skills/
-
-# Or scoped to a single project
-cp -r code-structure /path/to/project/.claude/skills/
+npx skills add michaelshimeles/skills
 ```
 
 Claude Code picks up the skill automatically and invokes it when a task matches the skill's description. You can also invoke one explicitly with `/code-structure` or `/evidence-driven-testing`.
