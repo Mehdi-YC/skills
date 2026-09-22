@@ -5,40 +5,34 @@ description: Use when multiple workflows duplicate the same operational logic, w
 
 # Service Layer Architecture
 
-## Overview
-
-**Two-layer separation:** Actions orchestrate domain rules (the "why/when"), while a service layer centralizes reusable operational mechanics (the "how").
-
-This prevents duplicated code, inconsistent behavior, and bugs fixed in one path but not others.
+**Two-layer separation:** Actions orchestrate domain rules ("why/when"), service layer centralizes reusable mechanics ("how").
 
 ## When to Use
 
-- Multiple callers need the same low-level operation (sandbox creation, email sending, payment processing)
-- You're copy-pasting operational logic between action files
-- A bug fix in one workflow doesn't propagate to others doing the same thing
-- Adding a new feature that shares mechanics with existing flows
+- Multiple callers need the same operation (sandbox creation, email sending, payment processing)
+- Copy-pasting operational logic between action files
+- Bug fix in one workflow doesn't propagate to others
+- New feature shares mechanics with existing flows
 
-**Don't use when:** Logic is truly domain-specific and used by only one caller.
+**Don't use when:** Logic is truly domain-specific and used by one caller only.
 
 ## Core Pattern
 
 ```
-Orchestration Layer (Actions)          Service Layer (Shared Mechanics)
-├── owns business rules                ├── owns reusable operations
-├── owns state transitions             ├── owns provider/SDK interactions
-├── owns auth/ownership checks         ├── owns command execution details
-├── owns failure classification        ├── owns health checks / readiness
-├── owns retries / user-facing errors  └── returns structured results
+Orchestration (Actions)                  Service Layer
+├── business rules                       ├── reusable operations
+├── state transitions                    ├── provider/SDK interactions
+├── auth/ownership checks                ├── command execution details
+├── failure classification               ├── health checks / readiness
+├── retries / user-facing errors         └── structured results
 └── calls service functions
 ```
 
-**Rule of thumb:**
-- "What this product flow means" → keep in actions
-- "How to do this operation reliably" → move to service layer
+**Rule:** "What this flow means" → actions. "How to do it reliably" → service layer.
 
 ## Quick Reference
 
-| Design Principle | Do | Don't |
+| Principle | Do | Don't |
 |---|---|---|
 | API shape | Composable capability blocks | One giant "do everything" method |
 | Inputs/outputs | Explicit params, structured returns | Hidden global state, reaching into DB |
@@ -48,36 +42,20 @@ Orchestration Layer (Actions)          Service Layer (Shared Mechanics)
 
 ## Designing Service Functions
 
-Design as **capability blocks**, not monoliths:
-
-```ts
-// Good: composable, each caller chooses what to use
-createManagedSandbox(...)
-prepareRepo(...)
-detectPackageManager(...)
-installDependencies(...)
-runBuildCommand(...)
-startSandboxRuntime(...)
-```
-
 Each function should:
 - Accept all required data as **explicit parameters**
 - Return **structured outputs** (e.g., `{ ready, previewUrl, proxyPort }`)
 - Never reach into database/state directly
 - Make failure explicit (structured results, not swallowed errors)
 
-This lets callers choose strict vs relaxed behavior per flow.
-
 ## Migration Checklist
 
-When extracting shared logic:
-
-1. Write the flow in action code first (clear behavior)
+1. Write the flow in action code first
 2. Mark repeated operational chunks across callers
 3. Extract **only** repeated, non-domain chunks to service
-4. Replace one caller → verify → replace remaining callers
-5. Keep domain policy in actions (auth, status transitions, error classification)
-6. Run verification: typecheck, lint, confirm all flows still work
+4. Replace one caller → verify → replace remaining
+5. Keep domain policy in actions
+6. Run: typecheck, lint, confirm all flows work
 
 ## Anti-Patterns
 
@@ -85,10 +63,10 @@ When extracting shared logic:
 |---|---|
 | **God service** | One huge function hides all control flow |
 | **Leaky service** | Service mutates database tables directly |
-| **Inconsistent API** | Each function uses different argument styles and error semantics |
-| **Over-abstraction** | Extracting logic used by only one caller |
+| **Inconsistent API** | Different argument styles and error semantics |
+| **Over-abstraction** | Extracting logic used by one caller |
 
-## Example: Email Service (Simple)
+## Example
 
 ```ts
 // emailService.ts — shared mechanics
@@ -97,20 +75,13 @@ export async function sendWelcomeEmail(params: { to: string; name: string }) {
   await emailProvider.send(params.to, "Welcome", html);
 }
 
-// userSignup.ts — orchestration (owns WHEN to send)
+// userSignup.ts — orchestration (owns WHEN)
 if (user.marketingOptIn) {
   await sendWelcomeEmail({ to: user.email, name: user.name });
 }
 
-// adminInvite.ts — orchestration (different business rule, same mechanic)
+// adminInvite.ts — orchestration (different rule, same mechanic)
 await sendWelcomeEmail({ to: invitee.email, name: invitee.name });
 ```
 
-## Mental Model
-
-```
-New feature? → Write in action first → See repeated ops? → Extract to service
-                                      → No repetition?  → Keep in action
-```
-
-Your architecture in one sentence: **Actions orchestrate domain rules, while the service layer centralizes reusable operational mechanics with a composable, explicit-input API.**
+**Mental model:** New feature → write in action first → see repeated ops → extract to service → no repetition → keep in action.
