@@ -90,7 +90,7 @@ Capture:
 
 * **Before:** establish the relevant existing behavior/state, ideally while reproducing the issue.
 * **After:** demonstrate the behavior/state after the change.
-
+ for UI changes use gh cli to send the images you captured, use chromium_browser with playwright
 Use all relevant available repository tooling:
 
 * Tests
@@ -191,7 +191,7 @@ There are two separate approval gates:
 2. **PR approval** → work is accepted.
 
 Never assume approval from silence.
-
+when a new feature is added, recheck the readme if existing and change it if needed
 Present the PR URL when ready for review.
 
 ## Writing for Humans
